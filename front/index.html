@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>experiments in anarchy</title>
+        <style>
+            body
+            {
+                margin: 0;
+                overflow-x: hidden;
+                font-family: sans-serif;
+            }
+
+            main
+            {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            canvas
+            {
+                margin-top: 15px;
+                margin-bottom: 12px;
+                background-color: #f8f8f8;
+                touch-action: none;
+                border: solid 3px #333333;
+            }
+
+            a
+            {
+                font-weight: bold;
+                text-decoration: none;
+                color: black;
+            }
+
+            p
+            {
+                margin: 10px 0;
+            }
+
+            button
+            {
+                border: none;
+                padding: 8px 12px;
+                background-color: #f73072;
+                color: white;
+                border-radius: 12px;
+                font-size: 1.2rem;
+                cursor: pointer;
+                box-shadow: #21192b3a 3px 3px 10px;
+                outline: none;
+            }
+        </style>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script type = "text/javascript">
+            var socket = io();
+            
+            document.addEventListener("DOMContentLoaded", () => {
+                let lastMouse = {x: -5, y: -5};
+                let canv = document.getElementsByTagName("canvas")[0];
+                let ctx = canv.getContext("2d");
+                let color = "#000000";
+
+                ctx.lineWidth = 3;
+
+                genRandomColor();
+
+                function genRandomColor()
+                {
+                    let r = 17 + Math.floor(Math.random() * 150);
+                    let g = 17 + Math.floor(Math.random() * 150);
+                    let b = 17 + Math.floor(Math.random() * 150);
+                    color = "#" + r.toString(16) + g.toString(16) + b.toString(16);
+                }
+
+                function line(a, b, c)
+                {
+                    ctx.beginPath();
+                    ctx.strokeStyle = c;
+                    ctx.moveTo(a.x+0.5, a.y+0.5);
+                    ctx.lineTo(b.x+0.5, b.y+0.5);
+                    ctx.stroke();
+                }
+
+                function dot(p, c)
+                {
+                    ctx.beginPath();
+                    ctx.fillStyle = c;
+                    ctx.arc(p.x+0.5, p.y+0.5, 1.5, 0, 360, false);
+                    ctx.fill();
+                }
+
+                socket.on('update', (lPos, nPos, col) =>
+                {
+                    line(lPos, nPos, col);
+                });
+
+                function getMousePos(canvas, evt) {
+                    var rect = canvas.getBoundingClientRect();
+                    return {
+                        x: evt.clientX - rect.left,
+                        y: evt.clientY - rect.top
+                    };
+                }
+
+                function clear(emit)
+                {
+                    ctx.clearRect(0, 0, canv.width, canv.height);
+                    genRandomColor();
+                    if(emit) socket.emit('clear');
+                }
+
+                socket.on('init', (ops) => {
+                    for(let i = 0; i < ops.length; i++)
+                    {
+                        let op = ops[i];
+                        if(op.type === 0) line(op.a, op.b, op.c); else dot(op.p, op.c);
+                    }
+                });
+
+                socket.on('dot', (pos, col) => {
+                    dot(pos, col);
+                });
+
+                socket.on('clear', () => {
+                    clear(false);
+                })
+
+                document.getElementsByTagName("button")[0].addEventListener("click", () => {
+                    clear(true);
+                });
+
+                let held = false;
+
+                canv.addEventListener("pointerup", (evt) => {
+                    held = false;
+                });
+
+                canv.addEventListener("pointerleave", () => {
+                    held = false;
+                });
+
+                canv.addEventListener("pointerdown", (evt) => {
+                    held = true;
+                    lastMouse = getMousePos(canv, evt);
+                    dot(lastMouse, color);
+                    socket.emit('dot', lastMouse, color);
+                });
+
+                canv.addEventListener("pointermove", (evt) => {
+                    if(!held) return;
+                    let pos = getMousePos(canv, evt);
+                    line(lastMouse, pos, color);
+                    socket.emit('update', lastMouse, pos, color)
+                    lastMouse = pos;
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <main>
+            <canvas width="1200px", height="600px"></canvas><br>
+            <button>clear</button>
+            <p>drawnarchy made by <a href = "https://santripta.tech" target = "_blank">santripta sharma</a></p>
+        </main>
+    </body>
+</html>
