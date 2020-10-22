@@ -145,7 +145,7 @@
                         console.log(magnitude);
                         let dx = (b.x - a.x)/magnitude;
                         let dy = (b.y - a.y)/magnitude;
-                        for(let i = -1; i <= magnitude; i++)
+                        for(let i = 0; i <= magnitude; i++)
                         {
                             let p = {x: a.x + dx * i, y: a.y + dy * i};
                             drawPixel(p, c);
