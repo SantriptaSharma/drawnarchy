@@ -8,8 +8,7 @@ app.use(express.static("front"));
 var ops = [];
 
 app.get("/", (req, res) => {
-    let root = "D:/Documents/WebDevelopment/draw/front/";
-    res.sendFile(root + "index.html");
+    res.sendFile("index.html");
 });
 
 http.listen(process.env.PORT || 3000, () => {
