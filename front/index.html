@@ -90,7 +90,8 @@
                 let tool = 0;
                 let toolElements = [
                     document.getElementById("brush"),
-                    document.getElementById("pencil")
+                    document.getElementById("pencil"),
+                    document.getElementById("eraser")
                 ]
 
                 function setTool(i)
@@ -119,7 +120,7 @@
                     color = "#" + r.toString(16) + g.toString(16) + b.toString(16);
                 }
 
-                function clear(p)
+                function clearr(p)
                 {
                     p.x = Math.floor(p.x / 6) * 6;
                     p.y = Math.floor(p.y / 6) * 6;
@@ -136,6 +137,10 @@
 
                 function line(a, b, c, t = -1)
                 {
+                    let magnitude = 0;
+                    let dx = 0;
+                    let dy = 0;
+
                     switch(t)
                     {
                         case 0:
@@ -147,9 +152,9 @@
                         break;
 
                         case 1:
-                        let magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
-                        let dx = (b.x - a.x)/magnitude;
-                        let dy = (b.y - a.y)/magnitude;
+                        magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
+                        dx = (b.x - a.x)/magnitude;
+                        dy = (b.y - a.y)/magnitude;
                         for(let i = 0; i <= magnitude; i++)
                         {
                             let p = {x: a.x + dx * i, y: a.y + dy * i};
@@ -157,14 +162,14 @@
                         }
                         break;
 
-                        case 1:
-                        let magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
-                        let dx = (b.x - a.x) / magnitude;
-                        let dy = (b.y - a.y) / magnitude;
+                        case 2:
+                        magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
+                        dx = (b.x - a.x) / magnitude;
+                        dy = (b.y - a.y) / magnitude;
                         for (let i = 0; i <= magnitude; i++)
                         {
                             let p = { x: a.x + dx * i, y: a.y + dy * i };
-                            clear(p);
+                            clearr(p);
                         }
                         break;
                     }
@@ -187,7 +192,7 @@
                         break;
 
                         case 2:
-                        clear(p)
+                        clearr(p)
                         break;
                     }
                 }
