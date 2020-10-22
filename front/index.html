@@ -119,12 +119,18 @@
                     color = "#" + r.toString(16) + g.toString(16) + b.toString(16);
                 }
 
+                function clear(p)
+                {
+                    p.x = Math.floor(p.x / 6) * 6;
+                    p.y = Math.floor(p.y / 6) * 6;
+                    ctx.clearRect(p.x, p.y, 6, 6);
+                }
+
                 function drawPixel(p, c)
                 {
                     p.x = Math.floor(p.x / 6) * 6;
                     p.y = Math.floor(p.y / 6) * 6;
                     ctx.fillStyle = c;
-                    ctx.strokeStyle = c;
                     ctx.fillRect(p.x, p.y, 6, 6);
                 }
 
@@ -142,13 +148,23 @@
 
                         case 1:
                         let magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
-                        console.log(magnitude);
                         let dx = (b.x - a.x)/magnitude;
                         let dy = (b.y - a.y)/magnitude;
                         for(let i = 0; i <= magnitude; i++)
                         {
                             let p = {x: a.x + dx * i, y: a.y + dy * i};
                             drawPixel(p, c);
+                        }
+                        break;
+
+                        case 1:
+                        let magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
+                        let dx = (b.x - a.x) / magnitude;
+                        let dy = (b.y - a.y) / magnitude;
+                        for (let i = 0; i <= magnitude; i++)
+                        {
+                            let p = { x: a.x + dx * i, y: a.y + dy * i };
+                            clear(p);
                         }
                         break;
                     }
@@ -168,6 +184,10 @@
 
                         case 1:
                         drawPixel(p, c)
+                        break;
+
+                        case 2:
+                        clear(p)
                         break;
                     }
                 }
@@ -245,6 +265,7 @@
             <div class = "tools">
                 <button id = "brush" class = "active">brush</button>
                 <button id = "pencil">pencil</button>
+                <button id = "eraser">eraser</button>
             </div>
             <button id = "clear">clear</button>
             <p>drawnarchy made by <a href = "https://santripta.tech" target = "_blank">me</a></p>
