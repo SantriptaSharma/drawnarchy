@@ -6,7 +6,6 @@
             body
             {
                 margin: 0;
-                overflow-x: hidden;
                 font-family: sans-serif;
             }
 
@@ -50,6 +49,32 @@
                 cursor: pointer;
                 box-shadow: #21192b3a 3px 3px 10px;
                 outline: none;
+                transition-duration: 0.2s;
+            }
+
+            button:hover
+            {
+                background-color: #cc245c;
+            }
+
+            .tools
+            {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+            .tools button
+            {
+                font-size: 1rem;
+                margin: 0 8px;
+            }
+
+            .active
+            {
+                background-color: #d4225d;
             }
         </style>
 
@@ -62,6 +87,25 @@
                 let canv = document.getElementsByTagName("canvas")[0];
                 let ctx = canv.getContext("2d");
                 let color = "#000000";
+                let tool = 0;
+                let toolElements = [
+                    document.getElementById("brush"),
+                    document.getElementById("pencil")
+                ]
+
+                function setTool(i)
+                {
+                    tool = i;
+                    console.log(`Changed tool to ${i}`);
+                }
+
+                for (let i = 0; i < toolElements.length; i++) {
+                    toolElements[i].addEventListener("click", (e) => {
+                        toolElements[tool].classList.toggle("active");
+                        toolElements[i].classList.toggle("active");
+                        setTool(i);
+                    });
+                }
 
                 ctx.lineWidth = 3;
 
@@ -69,32 +113,68 @@
 
                 function genRandomColor()
                 {
-                    let r = 17 + Math.floor(Math.random() * 150);
-                    let g = 17 + Math.floor(Math.random() * 150);
-                    let b = 17 + Math.floor(Math.random() * 150);
+                    let r = 2 + Math.floor(Math.random() * 190);
+                    let g = 2 + Math.floor(Math.random() * 190);
+                    let b = 2 + Math.floor(Math.random() * 190);
                     color = "#" + r.toString(16) + g.toString(16) + b.toString(16);
                 }
 
-                function line(a, b, c)
+                function drawPixel(p, c)
                 {
-                    ctx.beginPath();
-                    ctx.strokeStyle = c;
-                    ctx.moveTo(a.x+0.5, a.y+0.5);
-                    ctx.lineTo(b.x+0.5, b.y+0.5);
-                    ctx.stroke();
-                }
-
-                function dot(p, c)
-                {
-                    ctx.beginPath();
+                    p.x = Math.floor(p.x / 6) * 6;
+                    p.y = Math.floor(p.y / 6) * 6;
                     ctx.fillStyle = c;
-                    ctx.arc(p.x+0.5, p.y+0.5, 1.5, 0, 360, false);
-                    ctx.fill();
+                    ctx.strokeStyle = c;
+                    ctx.fillRect(p.x, p.y, 6, 6);
                 }
 
-                socket.on('update', (lPos, nPos, col) =>
+                function line(a, b, c, t = -1)
                 {
-                    line(lPos, nPos, col);
+                    switch(t)
+                    {
+                        case 0:
+                        ctx.beginPath();
+                        ctx.strokeStyle = c;
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.stroke();
+                        break;
+
+                        case 1:
+                        let magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
+                        console.log(magnitude);
+                        let dx = (b.x - a.x)/magnitude;
+                        let dy = (b.y - a.y)/magnitude;
+                        for(let i = -1; i <= magnitude; i++)
+                        {
+                            let p = {x: a.x + dx * i, y: a.y + dy * i};
+                            drawPixel(p, c);
+                        }
+                        break;
+                    }
+                }
+
+
+                function dot(p, c, t = -1)
+                {
+                    switch(t)
+                    {
+                        case 0:
+                        ctx.beginPath();
+                        ctx.fillStyle = c;
+                        ctx.arc(p.x, p.y, 1.5, 0, 360, false);
+                        ctx.fill();
+                        break;
+
+                        case 1:
+                        drawPixel(p, c)
+                        break;
+                    }
+                }
+
+                socket.on('update', (lPos, nPos, col, tId) =>
+                {
+                    line(lPos, nPos, col, tId);
                 });
 
                 function getMousePos(canvas, evt) {
@@ -116,19 +196,19 @@
                     for(let i = 0; i < ops.length; i++)
                     {
                         let op = ops[i];
-                        if(op.type === 0) line(op.a, op.b, op.c); else dot(op.p, op.c);
+                        if(op.type === 0) line(op.a, op.b, op.c, op.t); else dot(op.p, op.c, op.t);
                     }
                 });
 
-                socket.on('dot', (pos, col) => {
-                    dot(pos, col);
+                socket.on('dot', (pos, col, tId) => {
+                    dot(pos, col, tId);
                 });
 
                 socket.on('clear', () => {
                     clear(false);
                 })
 
-                document.getElementsByTagName("button")[0].addEventListener("click", () => {
+                document.getElementById("clear").addEventListener("click", () => {
                     clear(true);
                 });
 
@@ -145,15 +225,15 @@
                 canv.addEventListener("pointerdown", (evt) => {
                     held = true;
                     lastMouse = getMousePos(canv, evt);
-                    dot(lastMouse, color);
-                    socket.emit('dot', lastMouse, color);
+                    dot(lastMouse, color, tool);
+                    socket.emit('dot', lastMouse, color, tool);
                 });
 
                 canv.addEventListener("pointermove", (evt) => {
                     if(!held) return;
                     let pos = getMousePos(canv, evt);
-                    line(lastMouse, pos, color);
-                    socket.emit('update', lastMouse, pos, color)
+                    line(lastMouse, pos, color, tool);
+                    socket.emit('update', lastMouse, pos, color, tool)
                     lastMouse = pos;
                 });
             });
@@ -161,8 +241,12 @@
     </head>
     <body>
         <main>
-            <canvas width="1200px", height="600px"></canvas><br>
-            <button>clear</button>
+            <canvas width="1080px", height="540px"></canvas><br>
+            <div class = "tools">
+                <button id = "brush" class = "active">brush</button>
+                <button id = "pencil">pencil</button>
+            </div>
+            <button id = "clear">clear</button>
             <p>drawnarchy made by <a href = "https://santripta.tech" target = "_blank">me</a></p>
         </main>
     </body>
