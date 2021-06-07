@@ -11,6 +11,11 @@ app.get("/", (req, res) => {
     res.sendFile("index.html");
 });
 
+app.get("/ops", (req, res) => {
+    console.log("sent ops");
+    res.status(200).send(ops);
+});
+
 http.listen(process.env.PORT || 3000, () => {
     console.log(`Listening on port ${process.env.PORT || 3000}`);
 });
@@ -25,6 +30,12 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log(`user ${socket.id} disconnected`)
+    });
+
+    socket.on('load-ops', (obj) => {
+        io.emit("clear");
+        ops = obj;
+        io.emit('init', ops)
     });
 
     socket.on('clear', () => {

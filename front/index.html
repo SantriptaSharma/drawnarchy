@@ -72,6 +72,12 @@
                 margin: 0 8px;
             }
 
+            .save-tools button
+            {
+                font-size: 1.1rem;
+                margin: 0 6px;
+            }
+
             .active
             {
                 background-color: #d4225d;
@@ -92,8 +98,12 @@
                     document.getElementById("brush"),
                     document.getElementById("pencil"),
                     document.getElementById("small-pencil"),
-                    document.getElementById("eraser")
+                    document.getElementById("eraser"),
+                    document.getElementById("pixel-eraser")
                 ]
+
+                document.getElementById("save-desktop").addEventListener("click", SaveToDesktop);
+                document.getElementById("load-desktop").addEventListener("click", LoadFromDesktop);
 
                 function setTool(i)
                 {
@@ -174,6 +184,14 @@
                         break;
 
                         case 3:
+                            ctx.beginPath();
+                            ctx.strokeStyle = "#f8f8f8";
+                            ctx.moveTo(a.x, a.y);
+                            ctx.lineTo(b.x, b.y);
+                            ctx.stroke();
+                        break;
+
+                        case 4:
                         magnitude = Math.sqrt(Math.pow(Math.abs(b.x - a.x), 2) + Math.pow(Math.abs(b.y - a.y), 2));
                         dx = (b.x - a.x) / magnitude;
                         dy = (b.y - a.y) / magnitude;
@@ -186,6 +204,45 @@
                     }
                 }
 
+                function SaveToDesktop()
+                {
+                    let request = new XMLHttpRequest();
+                    request.open("GET", window.location.href + "ops");
+                    request.onreadystatechange = () =>
+                    {
+                        if(request.status === 200 && request.readyState === XMLHttpRequest.DONE)
+                        {
+                            let data = new Blob([request.responseText], { type: "text/json" });
+                            let autodown = document.createElement("a");
+                            let url = URL.createObjectURL(data);
+                            autodown.href = url;
+                            autodown.download = `Drawnarchy Operations ${new Date().toLocaleString().replace(",", " ")}.drawnarch`;
+                            document.body.appendChild(autodown);
+                            autodown.dispatchEvent(new MouseEvent("click"));
+                            document.body.removeChild(autodown);
+                            URL.revokeObjectURL(autodown.href);
+                        }
+                    }
+
+                    request.send();
+                }
+
+                function LoadFromDesktop()
+                {
+                    let input = document.createElement('input');
+                    input.type = 'file';
+                    input.multiple = false;
+                    input.accept = ".drawnarch";
+                    input.click();
+
+                    input.onchange = () => {
+                        let file = input.files[0];
+                        file.text().then((val) => {
+                            let obj = JSON.parse(val);
+                            socket.emit("load-ops", obj);
+                        });
+                    }
+                }
 
                 function dot(p, c, t = -1)
                 {
@@ -207,6 +264,12 @@
                         break;
 
                         case 3:
+                        ctx.beginPath();
+                        ctx.fillStyle = "#f8f8f8";
+                        ctx.arc(p.x, p.y, 1.5, 0, 360, false);
+                        break;
+
+                        case 4:
                         clearr(p);
                         break;
                     }
@@ -287,7 +350,14 @@
                 <button id = "pencil">pencil</button>
                 <button id = "small-pencil">small pencil</button>
                 <button id = "eraser">eraser</button>
+                <button id = "pixel-eraser">pixel eraser</button>
             </div>
+            <div class = "save-tools">
+                <button id = "save-database" onclick="alert(`Coming Soon`);">Save To Drawnarchy Library</button>
+                <button id = "save-desktop">Save To Desktop</button>
+                <button id = "load-desktop">Load from Desktop</button>
+            </div>
+            <br>
             <button id = "clear">clear</button>
             <p>drawnarchy made by <a href = "https://santripta.tech" target = "_blank">me</a></p>
         </main>
